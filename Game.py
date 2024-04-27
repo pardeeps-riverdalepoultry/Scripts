@@ -27,6 +27,9 @@ try:
     session_token = auth_response.json()["credentials"]["sessionID"]
 except requests.exceptions.RequestException as e:
     print(f"Authentication failed as: {e}")
+    print("This is a test")
+    print("this is not a test")
+    print("This is test")
     exit(1)
 
 
