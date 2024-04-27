@@ -28,8 +28,9 @@ try:
 except requests.exceptions.RequestException as e:
     print(f"Authentication failed as: {e}")
     print("This is a test")
-    print("this is not a test")
     print("This is test")
+    print("New Features")
+#this is a comment in new features
     exit(1)
 
 
