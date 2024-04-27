@@ -26,7 +26,7 @@ try:
     # Get the session token from the response
     session_token = auth_response.json()["credentials"]["sessionID"]
 except requests.exceptions.RequestException as e:
-    print(f"Authentication failed: {e}")
+    print(f"Authentication failed as: {e}")
     exit(1)
 
 
@@ -46,7 +46,7 @@ device_location_payload = {
     },
     "resultsLimit": 5
 }
-
+#New comment
 try:
     # Send the device location request
     location_response = requests.post(device_location_endpoint, json=device_location_payload)
