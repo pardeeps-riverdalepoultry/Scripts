@@ -44,7 +44,7 @@ device_location_payload = {
         "database": database,
         "sessionID": session_token
     },
-    "resultsLimit": 1
+    "resultsLimit": 5
 }
 
 try:
