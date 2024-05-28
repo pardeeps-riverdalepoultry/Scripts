@@ -24,7 +24,7 @@ create or replace pipe RPE_APOLLO.DAILY_LOAD_BOARD.S3_LOAD_PIPE auto_ingest=true
 alter pipe S3_LOAD_PIPE set pipe_execution_paused = false;
 
 -- Test data
-select * from driver where processing_date = '2024-05-15';
+select * from event where processing_date = '2024-05-17';
 
 --I want to select the minimum processing date from the event table
 select min(processing_date) from event;
