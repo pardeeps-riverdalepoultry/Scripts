@@ -126,54 +126,6 @@ def DeviceStatusInfo(api):
     location_data = convert_datetime_to_string(location_data)
     return location_data
 
-###########################################
-# code used to flatten the nested dictionary
-###########################################
-def flatten_dict(d, parent_key='', sep='_'):
-    """
-    Flatten a dictionary with nested dictionaries into a single dictionary
-    with compound keys.
-
-    Args:
-        d (dict): The dictionary to flatten.
-        parent_key (str): The base key to prefix (used in recursion).
-        sep (str): The separator to use between parent and child keys.
-
-    Returns:
-        dict: The flattened dictionary.
-    """
-    items = []
-    for k, v in d.items():
-        new_key = f"{parent_key}{sep}{k}" if parent_key else k
-        if isinstance(v, dict):
-            items.extend(flatten_dict(v, new_key, sep=sep).items())
-        elif isinstance(v, list):
-            if all(isinstance(i, dict) for i in v):
-                for idx, sub_dict in enumerate(v):
-                    items.extend(flatten_dict(sub_dict, f"{new_key}{sep}{idx}", sep=sep).items())
-            else:
-                items.append((new_key, v))
-        else:
-            items.append((new_key, v))
-    return dict(items)
-
-def flatten_location_data(locations_data):
-    """
-    Flatten all dictionaries within the 'key' list of locations_data.
-
-    Args:
-        locations_data (dict): The dictionary containing the list of location data.
-
-    Returns:
-        list: A list of flattened dictionaries.
-    """
-    flattened_list = []
-    for item in locations_data['key2']:
-        flattened_list.append(flatten_dict(item))
-    return flattened_list
-
-###########################################
-
 def lambda_handler(request, context):
     # Extract secrets from the request payload
     secrets = request.get('secrets', {})
@@ -205,20 +157,19 @@ def lambda_handler(request, context):
 
     # Initializing the dictionaries
     insert = {}
-    locations_data = {}
-
+    
     # Fetching device status info and renaming the key
     device_status_info = DeviceStatusInfo(api)
     device_status_info['DeviceStatusInfo'] = device_status_info.pop('Location')
 
-    # Flattening the data
-    flattened_data = flatten_location_data({'key2': device_status_info['DeviceStatusInfo']})
-
     # Updating the insert dictionary
-    insert['DeviceStatusInfo'] = flattened_data
+    insert['DeviceStatusInfo'] = device_status_info['DeviceStatusInfo']
+    # save device_status_info['DeviceStatusInfo'] as json file
+    with open('device_status_info.json', 'w') as f:
+        json.dump(device_status_info, f)
 
 
-    #--------------------------------------------
+    #################
 
     dvirlog_params = {'fromDate': fromDate, 'toDate': toDate}
     insert['DVIRLog'] = get_geotab_data(api, 'DVIRLog', fromDate, toDate, dvirlog_params)

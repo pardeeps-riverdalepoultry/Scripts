@@ -1,4 +1,4 @@
-select * from device_status_info;
+select * from device_status_info where _fivetran_synced in (select max(_fivetran_synced) from device_status_info);
 select * from incremental_update_device_status_info;
 
 -- NEXT CREATE FILE FORMAT, ALREADY CREATED FOR THIS TASK
