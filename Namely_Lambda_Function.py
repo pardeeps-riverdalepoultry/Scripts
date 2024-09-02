@@ -3,6 +3,7 @@ import json
 import requests
 import time
 from datetime import datetime, timedelta
+import csv
 
 # Declare current time in ISO format used for fivetran object
 datetime_current = datetime.today().isoformat()
@@ -15,34 +16,45 @@ config = {
     'profile': {
         'aws_s3_folder_name': 'profiles',
         'guid': '',
-        'hour_modulus': 1,
+        'hour_modulus': 8,
         'endpoint': 'profiles',
-        'date_threshold': None
+        'date_threshold': None,
+        'returned_namely_data_key': 'profiles'
     },
     'time_off_event': {
         'aws_s3_folder_name': 'report_time_off_events',
-        'guid': '/c63f3579-c0a1-4716-9947-dbfeebe7eb08',
+        'guid': '/b08612ec-fc77-4224-9425-0362444e120f',
         'hour_modulus': 1,
         'endpoint': 'reports',
-        'date_threshold': 10    
+        'date_threshold': 10,
+        'returned_namely_data_key': 'reports'
     },
     'all_time_off_events': {
         'aws_s3_folder_name': 'report_unfiltered_time_off_events',
-        'guid': '/c63f3579-c0a1-4716-9947-dbfeebe7eb08',
-        'hour_modulus': 22,
+        'guid': '/b08612ec-fc77-4224-9425-0362444e120f',
+        'hour_modulus': 24,
         'endpoint': 'reports',
-        'date_threshold': None
+        'date_threshold': None,
+        'returned_namely_data_key': 'reports'
+    },
+    'group': {
+        'aws_s3_folder_name': 'groups',
+        'guid': '',
+        'hour_modulus': 24,
+        'endpoint': 'groups',
+        'date_threshold': None,
+        'returned_namely_data_key': 'groups'
     }
 }
 
 # Function to get paginated data from Namely API
-def get_namely_data(api_root, headers, endpoint, per_page=50):
-    page = 10
+def get_namely_data(api_root, headers, endpoint,namely_returned_data_key , per_page=50):
+    page = 1  # Start page
     all_data = []
 
     # Check if the endpoint is 'profiles' to handle pagination
     if endpoint == 'profiles':
-        while True:
+        while page <= 8:  # last page
             url = f"{api_root}.json?page={page}&per_page={per_page}&sort=-updated_at"
             response = requests.get(url, headers=headers)
             response_data = response.json()
@@ -57,7 +69,7 @@ def get_namely_data(api_root, headers, endpoint, per_page=50):
     else:
         response = requests.get(api_root, headers=headers)
         response_data = json.loads(response.content.decode('utf-8'))
-        all_data.extend(response_data['reports'])
+        all_data.extend(response_data[namely_returned_data_key])
 
     return all_data
 
@@ -85,6 +97,7 @@ def lambda_handler(request, context):
         url = namely_url + endpoint
         guid = value['guid']
         hour_modulus = value['hour_modulus']
+        namely_returned_data_key = value['returned_namely_data_key']
         # if date_threshold is not set, set it to 0, this is because or returns the first truthy value. None is considered as False
         date_filter = value['date_threshold'] or 0
 
@@ -92,15 +105,16 @@ def lambda_handler(request, context):
         modulus_calc = (datetime.now().hour) % hour_modulus
         if modulus_calc == 0:
             # Get data from Namely API
-            start_time = time.time()
-            data = get_namely_data(url + guid, request_headers, endpoint)
-            end_time = time.time()
-            print(f"Time taken to get data from Namely API{list_name}: {end_time - start_time} seconds")
+            data = get_namely_data(url + guid, request_headers, endpoint,namely_returned_data_key)
             # Process data based on the key
             if key == 'profile':
                 for profile in data:
                     insert[list_name].append(profile)
 
+            if key == 'group':
+                for group in data:
+                    insert[list_name].append(group)
+                
             elif key == 'time_off_event' or key == 'all_time_off_events':
                 for report in data:
                     columns = [column['label'] for column in report['columns']]

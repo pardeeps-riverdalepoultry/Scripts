@@ -65,3 +65,11 @@ ALTER TASK RPE_APOLLO.GEOTAB.REFRESH_DEVICE_STATUS_INFO RESUME;
 CALL rpe_apollo.geotab.refreshDeviceStatusInfo();
 
 select * from device_status_info;
+
+
+alter task refresh_device_status_info suspend;
+Alter task refresh_device_status_info
+set schedule = '30 minutes';
+
+alter task refresh_device_status_info resume;
+
